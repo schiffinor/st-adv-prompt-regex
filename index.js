@@ -290,16 +290,28 @@ eventSource.on(event_types.CHAT_COMPLETION_PROMPT_READY, async (data) => {
         return;
     }
 
+    // in-place: regex each .content only
+    chatCopy = data.chat;
+    chatCopy.forEach(message => {
+        if (typeof message.content === 'string') {
+            message.content = getRegexedString(
+                message.content,
+                regex_placement.AI_OUTPUT,
+                { isPrompt: true }
+            );
+        }
+    });
+    console.debug('Prompt Regexer: All content fields regex’d');
     const promptJson = JSON.stringify(data.chat, null, 4);
-    const result = getRegexedString((promptJson), regex_placement.AI_OUTPUT, {isPrompt: true});
+    const chatCopyJson = JSON.stringify(chatCopy, null, 4);
 
-    if (result === promptJson) {
+    if (chatCopyJson === promptJson) {
         console.debug('Prompt Regexer: No changes');
         return;
     }
 
     try {
-        const chat = JSON.parse(result);
+        const chat = JSON.parse(chatCopyJson);
 
         // Chat is passed by reference, so we can modify it directly
         if (Array.isArray(chat) && Array.isArray(data.chat)) {
